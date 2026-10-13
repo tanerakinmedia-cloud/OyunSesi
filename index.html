@@ -11,29 +11,33 @@ main{width:min(560px,100%);background:#101a27eF;border:1px solid #27415b;border-
 .logo{color:var(--blue);font-size:13px;letter-spacing:.2em;font-weight:800}.title{font-size:32px;margin:6px 0}.sub{color:var(--muted);margin:0 0 22px}
 label{display:block;color:#c4d5e8;font-size:13px;margin:15px 0 7px}input{width:100%;padding:13px;border:1px solid #30465e;border-radius:10px;background:#0b121c;color:white;font-size:16px;outline:none}input:focus{border-color:var(--blue)}
 .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:10px;padding:12px 15px;font-weight:700;cursor:pointer;background:var(--blue);color:#04111d}button.secondary{background:#26384c;color:#eaf3ff}button.danger{background:#492b35;color:#ffdce3}button:disabled{opacity:.45;cursor:not-allowed}
-.status{margin-top:18px;padding:12px;border-radius:10px;background:#0a121c;color:#b9cbe0;font-size:14px;white-space:pre-wrap}.people{margin-top:16px;border-top:1px solid #26384c;padding-top:12px}.person{padding:9px 11px;background:#172536;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:18px}.pill{color:#9fe4bd}.mic-meter{margin-top:9px;padding:10px 12px;background:#0a121c;border:1px solid #26384c;border-radius:10px}.meter-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);margin-bottom:7px}.meter-track{height:10px;background:#1a2a3c;border-radius:99px;overflow:hidden}.meter-fill{height:100%;width:0%;background:var(--blue);border-radius:99px;transition:width .08s linear}.meter-note{font-size:11px;color:var(--muted);margin-top:6px}
+.status{margin-top:18px;padding:12px;border-radius:10px;background:#0a121c;color:#b9cbe0;font-size:14px;white-space:pre-wrap}.people{margin-top:16px;border-top:1px solid #26384c;padding-top:12px}.person{padding:9px 11px;background:#172536;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:18px}.pill{color:#9fe4bd}.room-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.room-card{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;background:#172536;color:#eaf3ff;border:1px solid #30465e;padding:13px}.room-card span,.room-card small{color:#91a4bb;font-size:12px}.room-card.selected{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}.person{gap:10px;align-items:center;flex-wrap:wrap}.person-name{flex:1;min-width:100px}.person-volume{width:120px;accent-color:var(--blue)}.person-vol-label{font-size:11px;color:var(--muted);min-width:34px}.mic-meter{margin-top:9px;padding:10px 12px;background:#0a121c;border:1px solid #26384c;border-radius:10px}.meter-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);margin-bottom:7px}.meter-track{height:10px;background:#1a2a3c;border-radius:99px;overflow:hidden}.meter-fill{height:100%;width:0%;background:var(--blue);border-radius:99px;transition:width .08s linear}.meter-note{font-size:11px;color:var(--muted);margin-top:6px}
 </style></head>
 <body><main>
 <div class="logo">VOICE • PARTY • GAME</div><h1 class="title">Volwain</h1><p class="sub">Arkadaşlarınla aynı odada konuş.</p>
-<label for="room">Oda kodu (tüm arkadaşlarda aynı olmalı)</label><input id="room" value="volwain-1" maxlength="32" placeholder="ör. volwain-1">
+<label>Sabit odalar — katılmak istediğin odayı seç</label><div id="roomGrid" class="room-grid">
+<button class="room-card selected" data-room="volwain-oda-1" type="button"><strong>Oda 1</strong><span>Genel sohbet</span><small>Herkese açık</small></button>
+<button class="room-card" data-room="volwain-oda-2" type="button"><strong>Oda 2</strong><span>Oyun odası</span><small>Herkese açık</small></button>
+<button class="room-card" data-room="volwain-oda-3" type="button"><strong>Oda 3</strong><span>Takım odası</span><small>Herkese açık</small></button>
+<button class="room-card" data-room="volwain-oda-4" type="button"><strong>Oda 4</strong><span>Serbest sohbet</span><small>Herkese açık</small></button></div>
 <label for="name">Oyuncu adın</label><input id="name" maxlength="24" placeholder="ör. Volwain">
 <label for="mic">Mikrofon seç</label>
 <div class="row" style="margin-top:0"><select id="mic" style="flex:1;min-width:220px;padding:13px;border:1px solid #30465e;border-radius:10px;background:#0b121c;color:white;font-size:15px"><option value="">Varsayılan mikrofon</option></select><button id="refreshMic" class="secondary" type="button">Yenile</button></div>
 <div id="micStatus" class="hint" style="margin-top:7px">Mikrofon listesini görmek için izin ver veya Yenile'ye bas.</div>
 <div class="mic-meter"><div class="meter-head"><span>Mikrofon ses seviyesi</span><span id="micLevelText">Bekleniyor</span></div><div class="meter-track"><div id="micLevelFill" class="meter-fill"></div></div><div class="meter-note">Konuştuğunda çubuk hareket etmelidir. Gösterge oda açıldığında çalışır.</div></div>
-<div class="row"><button id="host">Odayı oluştur</button><button id="join" class="secondary">Odaya katıl</button></div>
-<div class="row"><button id="mute" class="secondary" disabled>Mikrofonu kapat</button><button id="ptt" class="secondary" disabled>Bas-konuş: kapalı</button><button id="leave" class="danger" disabled>Bağlantıyı kes</button></div>
+<div class="row"><button id="join">Seçili odaya katıl</button></div>
+<div class="row"><button id="mute" class="secondary" disabled>Mikrofonu kapat</button><button id="outputMute" class="secondary" disabled>Gelen sesi sustur</button><button id="leave" class="danger" disabled>Odadan ayrıl</button></div>
 <div id="status" class="status">Hazır. İlk olarak “Odayı oluştur” veya “Odaya katıl” düğmesine bas.</div>
 <div class="people"><strong>Bağlantılar</strong><div id="people"><div class="person">Henüz kimse bağlanmadı</div></div></div>
 <div class="people" id="chatSection"><strong>Oda sohbeti</strong>
 <div id="chatMessages" style="height:180px;overflow:auto;background:#0a121c;border:1px solid #26384c;border-radius:10px;padding:10px;margin-top:10px"><div class="hint">Odaya bağlanınca mesajlaşabilirsin.</div></div>
 <div class="row" style="margin-top:10px"><input id="chatInput" maxlength="400" placeholder="Mesajını yaz..." style="flex:1;min-width:180px"><button id="sendChat" type="button">Gönder</button></div>
 <div class="hint">Sohbet mesajları aynı odadaki bağlı kullanıcılara iletilir. Kalıcı mesaj geçmişi yoktur.</div></div>
-<p class="hint">Deneme sürümüdür. Mikrofon için izin gerekir. Farklı evlerden kullanımda bağlantı ağına göre çalışmayabilir; güvenilir kullanım için TURN destekli bir sunucu gerekebilir. Oda kodunu herkese açık paylaşma. Ses aktarımı için PeerJS'in herkese açık sinyal sunucusuna ve WebRTC altyapısına bağımlıdır. Masaüstü paketinde de internet bağlantısı gerekir.</p>
+<p class="hint">Deneme sürümüdür. Bu prototipte her odanın ilk bağlanan kullanıcısı bağlantı merkezi olur; o kullanıcı çıkarsa odanın yeniden bağlanması gerekebilir. Kalıcı odalar için sunucu gerekir. Mikrofon için izin gerekir. Farklı evlerden kullanımda bağlantı ağına göre çalışmayabilir; güvenilir kullanım için TURN destekli bir sunucu gerekebilir. Oda kodunu herkese açık paylaşma. Ses aktarımı için PeerJS'in herkese açık sinyal sunucusuna ve WebRTC altyapısına bağımlıdır. Masaüstü paketinde de internet bağlantısı gerekir.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-let peer=null,stream=null,roomId="",myName="",isHost=false,muted=false,ptt=false,connections=new Map(),calls=new Map(),known=new Set(),hostConn=null,meterContext=null,meterFrame=0;
+let peer=null,stream=null,roomId="volwain-oda-1",myName="",isHost=false,muted=false,outputMuted=false,connections=new Map(),calls=new Map(),known=new Set(),hostConn=null,meterContext=null,meterFrame=0;
 function addChatMessage(sender,message,own=false){
  const box=$("chatMessages"); if(box.querySelector(".hint"))box.innerHTML="";
  const row=document.createElement("div");row.style.margin="6px 0";row.style.overflowWrap="anywhere";
@@ -92,9 +96,10 @@ function startMicMeter(mediaStream){
  }catch(e){$("micLevelText").textContent="Gösterge başlatılamadı"}
 }
 function stopMicMeter(){if(meterFrame)cancelAnimationFrame(meterFrame);meterFrame=0;if(meterContext){meterContext.close().catch(()=>{});meterContext=null}const fill=$("micLevelFill");if(fill)fill.style.width="0%";const label=$("micLevelText");if(label)label.textContent="Bekleniyor";}
-function safeRoom(){return $("room").value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,"").slice(0,32)}
-function render(){const box=$("people");box.innerHTML="";let names=[myName+" (sen)",...Array.from(connections.values()).map(x=>x.name||"Oyuncu")];if(names.length===1){box.innerHTML='<div class="person">Henüz kimse bağlanmadı</div>';return}names.forEach(n=>{const d=document.createElement("div");d.className="person";d.textContent=n;box.appendChild(d)})}
-function ui(on){$("host").disabled=on;$("join").disabled=on;$("mute").disabled=!on;$("ptt").disabled=!on;$("leave").disabled=!on}
+function safeRoom(){return roomId}
+document.querySelectorAll(".room-card").forEach(btn=>btn.addEventListener("click",()=>{if(peer)return;roomId=btn.dataset.room;document.querySelectorAll(".room-card").forEach(b=>b.classList.toggle("selected",b===btn));}));
+function render(){const box=$("people");box.innerHTML="";const entries=[{id:"self",name:(myName||"Sen")+" (sen)",self:true},...Array.from(connections.entries()).map(([id,x])=>({id,name:x.name||"Oyuncu"}))];if(entries.length===1){box.innerHTML='<div class="person">Henüz kimse bağlanmadı</div>';return}entries.forEach(p=>{const d=document.createElement("div");d.className="person";const n=document.createElement("span");n.className="person-name";n.textContent=p.name;d.appendChild(n);if(!p.self){const s=document.createElement("input");s.type="range";s.min="0";s.max="150";s.value="100";s.className="person-volume";s.title="Bu kişinin ses seviyesi";const l=document.createElement("span");l.className="person-vol-label";l.textContent="100%";s.addEventListener("input",()=>{l.textContent=s.value+"%";const a=document.getElementById("audio-"+p.id);if(a)a.volume=outputMuted?0:Math.min(1,Number(s.value)/100)});d.append(s,l)}box.appendChild(d)})}
+function ui(on){$("join").disabled=on;$("mute").disabled=!on;$("outputMute").disabled=!on;$("leave").disabled=!on;document.querySelectorAll(".room-card").forEach(b=>b.disabled=on)}
 async function start(host){
  if(peer)return;
  roomId=safeRoom();myName=$("name").value.trim().slice(0,24)||"Oyuncu";isHost=host;
@@ -102,12 +107,12 @@ async function start(host){
  try{const selected=$("mic").value;const audio=selected?{deviceId:{exact:selected},echoCancellation:true,noiseSuppression:true,autoGainControl:true}:{echoCancellation:true,noiseSuppression:true,autoGainControl:true};stream=await navigator.mediaDevices.getUserMedia({audio,video:false})}
  catch(e){status("Mikrofon açılamadı. Tarayıcı mikrofon iznini kontrol et.\n"+e.message);return}
  startMicMeter(stream);
- const id=host?"oyunsesi-"+roomId:undefined;
+ const id="volwain-"+roomId;
  try{peer=new Peer(id,{debug:1})}catch(e){status("Bağlantı başlatılamadı: "+e.message);cleanup(false);return}
  status("Sunucuya bağlanılıyor…");
  peer.on("open",id=>{
-   ui(true);status(host?"Oda hazır. Arkadaşlarına oda kodunu gönder: "+roomId:"Bağlandın. Odaya giriş yapılıyor…");
-   if(!host){hostConn=peer.connect("oyunsesi-"+roomId,{reliable:true});wireData(hostConn,true)}
+   ui(true);status("Bağlantı kuruldu. Seçili oda: "+roomId.replace("volwain-",""));
+   if(!host){hostConn=peer.connect("volwain-"+roomId,{reliable:true});wireData(hostConn,true)}
  });
  peer.on("connection",conn=>{if(!isHost){conn.close();return}wireData(conn,false)});
  peer.on("call",call=>{call.answer(stream);wireCall(call)});
@@ -137,11 +142,10 @@ function broadcastPeers(){
  connections.forEach((x,id)=>{if(x.conn&&x.conn.open)x.conn.send({type:"welcome",id:peer.id,name:myName})});
 }
 function callPeer(id){if(!peer||!stream||id===peer.id||calls.has(id))return;try{const c=peer.call(id,stream,{metadata:{name:myName}});if(c)wireCall(c,id)}catch(e){}}
-function wireCall(call,id){const remoteId=id||call.peer;calls.set(remoteId,call);call.on("stream",s=>{let audio=document.getElementById("audio-"+remoteId);if(!audio){audio=document.createElement("audio");audio.id="audio-"+remoteId;audio.autoplay=true;audio.playsInline=true;document.body.appendChild(audio)}audio.srcObject=s;audio.play().catch(()=>status("Ses için sayfaya tıklayıp oynatmayı etkinleştir."))});call.on("close",()=>{calls.delete(remoteId);const a=document.getElementById("audio-"+remoteId);if(a)a.remove()});call.on("error",()=>{calls.delete(remoteId)})}
-$("host").onclick=()=>start(true);$("join").onclick=()=>start(false);
-$("mute").onclick=()=>{if(!stream)return;muted=!muted;stream.getAudioTracks().forEach(t=>t.enabled=!muted||ptt);$("mute").textContent=muted?"Mikrofon kapalı":"Mikrofonu kapat"};
-$("ptt").onclick=()=>{ptt=!ptt;if(stream)stream.getAudioTracks().forEach(t=>t.enabled=ptt?false:!muted);$("ptt").textContent="Bas-konuş: "+(ptt?"açık":"kapalı");if(ptt){$("ptt").textContent="Bas-konuş: açık (V tuşunu basılı tut)"}};
-document.addEventListener("keydown",e=>{if(e.code==="KeyV"&&!e.repeat&&ptt&&stream){stream.getAudioTracks().forEach(t=>t.enabled=true)}});document.addEventListener("keyup",e=>{if(e.code==="KeyV"&&ptt&&stream){stream.getAudioTracks().forEach(t=>t.enabled=false)}});
+function wireCall(call,id){const remoteId=id||call.peer;calls.set(remoteId,call);call.on("stream",s=>{let audio=document.getElementById("audio-"+remoteId);if(!audio){audio=document.createElement("audio");audio.id="audio-"+remoteId;audio.autoplay=true;audio.playsInline=true;document.body.appendChild(audio)}audio.srcObject=s;audio.volume=outputMuted?0:1;audio.play().catch(()=>status("Ses için sayfaya tıklayıp oynatmayı etkinleştir."))});call.on("close",()=>{calls.delete(remoteId);const a=document.getElementById("audio-"+remoteId);if(a)a.remove()});call.on("error",()=>{calls.delete(remoteId)})}
+$("join").onclick=()=>start(false);
+$("mute").onclick=()=>{if(!stream)return;muted=!muted;stream.getAudioTracks().forEach(t=>t.enabled=!muted);$("mute").textContent=muted?"Mikrofonu aç":"Mikrofonu kapat"};
+$("outputMute").onclick=()=>{outputMuted=!outputMuted;document.querySelectorAll("audio[id^=\"audio-\"]").forEach(a=>a.volume=outputMuted?0:1);$("outputMute").textContent=outputMuted?"Gelen sesi aç":"Gelen sesi sustur"};
 function cleanup(send=true){if(send&&hostConn&&hostConn.open)hostConn.send({type:"leave",id:peer?.id});calls.forEach(c=>{try{c.close()}catch{}});calls.clear();connections.forEach(x=>{try{x.conn?.close()}catch{}});connections.clear();stopMicMeter();if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;if(peer){try{peer.destroy()}catch{}}peer=null;hostConn=null;known.clear();document.querySelectorAll("audio[id^='audio-']").forEach(a=>a.remove());ui(false);render();status("Bağlantı kesildi.")}
 $("leave").onclick=()=>cleanup(true);
 window.addEventListener("beforeunload",()=>cleanup(true));
