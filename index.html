@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OyunSesi — Sesli Oda</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root{color-scheme:dark;--blue:#2a96e8;--bg:#0b1018;--panel:#121c29;--text:#eaf3ff;--muted:#91a4bb}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#142b42,var(--bg) 55%);font:16px system-ui,Segoe UI,sans-serif;color:var(--text);min-height:100vh;display:grid;place-items:center;padding:20px}
+main{width:min(560px,100%);background:#101a27eF;border:1px solid #27415b;border-radius:22px;padding:26px;box-shadow:0 20px 70px #0008}
+.logo{color:var(--blue);font-size:13px;letter-spacing:.2em;font-weight:800}.title{font-size:32px;margin:6px 0}.sub{color:var(--muted);margin:0 0 22px}
+label{display:block;color:#c4d5e8;font-size:13px;margin:15px 0 7px}input{width:100%;padding:13px;border:1px solid #30465e;border-radius:10px;background:#0b121c;color:white;font-size:16px;outline:none}input:focus{border-color:var(--blue)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:10px;padding:12px 15px;font-weight:700;cursor:pointer;background:var(--blue);color:#04111d}button.secondary{background:#26384c;color:#eaf3ff}button.danger{background:#492b35;color:#ffdce3}button:disabled{opacity:.45;cursor:not-allowed}
+.status{margin-top:18px;padding:12px;border-radius:10px;background:#0a121c;color:#b9cbe0;font-size:14px;white-space:pre-wrap}.people{margin-top:16px;border-top:1px solid #26384c;padding-top:12px}.person{padding:9px 11px;background:#172536;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:18px}.pill{color:#9fe4bd}
+</style></head>
+<body><main>
+<div class="logo">VOICE • PARTY • GAME</div><h1 class="title">OyunSesi</h1><p class="sub">Arkadaşlarınla aynı odada konuş.</p>
+<label for="room">Oda kodu (tüm arkadaşlarda aynı olmalı)</label><input id="room" value="volwain-1" maxlength="32" placeholder="ör. volwain-1">
+<label for="name">Oyuncu adın</label><input id="name" maxlength="24" placeholder="ör. Volwain">
+<label for="mic">Mikrofon seç</label>
+<div class="row" style="margin-top:0"><select id="mic" style="flex:1;min-width:220px;padding:13px;border:1px solid #30465e;border-radius:10px;background:#0b121c;color:white;font-size:15px"><option value="">Varsayılan mikrofon</option></select><button id="refreshMic" class="secondary" type="button">Yenile</button></div>
+<div id="micStatus" class="hint" style="margin-top:7px">Mikrofon listesini görmek için izin ver veya Yenile'ye bas.</div>
+<div class="row"><button id="host">Odayı oluştur</button><button id="join" class="secondary">Odaya katıl</button></div>
+<div class="row"><button id="mute" class="secondary" disabled>Mikrofonu kapat</button><button id="ptt" class="secondary" disabled>Bas-konuş: kapalı</button><button id="leave" class="danger" disabled>Bağlantıyı kes</button></div>
+<div id="status" class="status">Hazır. İlk olarak “Odayı oluştur” veya “Odaya katıl” düğmesine bas.</div>
+<div class="people"><strong>Bağlantılar</strong><div id="people"><div class="person">Henüz kimse bağlanmadı</div></div></div>
+<p class="hint">Deneme sürümüdür. Mikrofon için izin gerekir. Farklı evlerden kullanımda bağlantı ağına göre çalışmayabilir; güvenilir kullanım için TURN destekli bir sunucu gerekebilir. Oda kodunu herkese açık paylaşma. Ses aktarımı için PeerJS'in herkese açık sinyal sunucusuna ve WebRTC altyapısına bağımlıdır. Masaüstü paketinde de internet bağlantısı gerekir.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let peer=null,stream=null,roomId="",myName="",isHost=false,muted=false,ptt=false,connections=new Map(),calls=new Map(),known=new Set(),hostConn=null;
+async function refreshMics(){
+ const sel=$("mic"), previous=sel.value;
+ try{
+   // Permission helps browsers reveal device labels.
+   try{const tmp=await navigator.mediaDevices.getUserMedia({audio:true});tmp.getTracks().forEach(t=>t.stop())}catch(e){}
+   const devices=await navigator.mediaDevices.enumerateDevices();
+   const mics=devices.filter(d=>d.kind==="audioinput");
+   sel.innerHTML="";
+   const def=document.createElement("option");def.value="";def.textContent="Varsayılan mikrofon";sel.appendChild(def);
+   mics.forEach((d,i)=>{const o=document.createElement("option");o.value=d.deviceId;o.textContent=d.label||("Mikrofon "+(i+1));sel.appendChild(o)});
+   if(previous && [...sel.options].some(o=>o.value===previous))sel.value=previous;
+   $("micStatus").textContent=mics.length?mics.length+" mikrofon bulundu. Odaya bağlanmadan önce seç.":"Mikrofon bulunamadı; Windows ses ayarlarını kontrol et.";
+ }catch(e){$("micStatus").textContent="Mikrofon listesi alınamadı: "+e.message}
+}
+if(navigator.mediaDevices){$("refreshMic").onclick=refreshMics;window.addEventListener("load",refreshMics);navigator.mediaDevices.addEventListener?.("devicechange",refreshMics)}
+
+const status=t=>$("status").textContent=t;
+function safeRoom(){return $("room").value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,"").slice(0,32)}
+function render(){const box=$("people");box.innerHTML="";let names=[myName+" (sen)",...Array.from(connections.values()).map(x=>x.name||"Oyuncu")];if(names.length===1){box.innerHTML='<div class="person">Henüz kimse bağlanmadı</div>';return}names.forEach(n=>{const d=document.createElement("div");d.className="person";d.textContent=n;box.appendChild(d)})}
+function ui(on){$("host").disabled=on;$("join").disabled=on;$("mute").disabled=!on;$("ptt").disabled=!on;$("leave").disabled=!on}
+async function start(host){
+ if(peer)return;
+ roomId=safeRoom();myName=$("name").value.trim().slice(0,24)||"Oyuncu";isHost=host;
+ if(roomId.length<3){status("Oda kodu en az 3 karakter olmalı.");return}
+ try{const selected=$("mic").value;const audio=selected?{deviceId:{exact:selected},echoCancellation:true,noiseSuppression:true,autoGainControl:true}:{echoCancellation:true,noiseSuppression:true,autoGainControl:true};stream=await navigator.mediaDevices.getUserMedia({audio,video:false})}
+ catch(e){status("Mikrofon açılamadı. Tarayıcı mikrofon iznini kontrol et.\n"+e.message);return}
+ const id=host?"oyunsesi-"+roomId:undefined;
+ try{peer=new Peer(id,{debug:1})}catch(e){status("Bağlantı başlatılamadı: "+e.message);cleanup(false);return}
+ status("Sunucuya bağlanılıyor…");
+ peer.on("open",id=>{
+   ui(true);status(host?"Oda hazır. Arkadaşlarına oda kodunu gönder: "+roomId:"Bağlandın. Odaya giriş yapılıyor…");
+   if(!host){hostConn=peer.connect("oyunsesi-"+roomId,{reliable:true});wireData(hostConn,true)}
+ });
+ peer.on("connection",conn=>{if(!isHost){conn.close();return}wireData(conn,false)});
+ peer.on("call",call=>{call.answer(stream);wireCall(call)});
+ peer.on("error",e=>status("Bağlantı hatası: "+e.type+" — "+e.message));
+ peer.on("disconnected",()=>status("Sinyal bağlantısı kesildi. İnternetini kontrol et."));
+ peer.on("close",()=>status("Bağlantı kapandı."));
+}
+function wireData(conn,toHost){
+ conn.on("open",()=>{if(toHost){conn.send({type:"join",name:myName,id:peer.id});} });
+ conn.on("data",msg=>{
+  if(!msg||!msg.type)return;
+  if(isHost){
+   if(msg.type==="join"){connections.set(msg.id,{name:msg.name,conn});known.add(msg.id);render();broadcastPeers();callPeer(msg.id);status("Oda açık. Arkadaşların oda koduyla katılabilir.");}
+   if(msg.type==="leave"){connections.delete(msg.id);known.delete(msg.id);render();broadcastPeers();}
+  }else{
+   if(msg.type==="peers"){msg.peers.forEach(p=>{if(p.id!==peer.id&&!known.has(p.id)){known.add(p.id);if(p.id!== "oyunsesi-"+roomId)callPeer(p.id)}});}
+   if(msg.type==="welcome"){connections.set(msg.id,{name:msg.name});render();}
+  }
+ });
+ conn.on("close",()=>{if(isHost){for(const [id,x] of connections)if(x.conn===conn){connections.delete(id);known.delete(id);render();broadcastPeers()}}});
+}
+function broadcastPeers(){
+ const peers=[{id:peer.id,name:myName},...Array.from(connections.entries()).map(([id,x])=>({id,name:x.name}))];
+ connections.forEach(x=>{if(x.conn&&x.conn.open)x.conn.send({type:"peers",peers})});
+ connections.forEach((x,id)=>{if(x.conn&&x.conn.open)x.conn.send({type:"welcome",id:peer.id,name:myName})});
+}
+function callPeer(id){if(!peer||!stream||id===peer.id||calls.has(id))return;try{const c=peer.call(id,stream,{metadata:{name:myName}});if(c)wireCall(c,id)}catch(e){}}
+function wireCall(call,id){const remoteId=id||call.peer;calls.set(remoteId,call);call.on("stream",s=>{let audio=document.getElementById("audio-"+remoteId);if(!audio){audio=document.createElement("audio");audio.id="audio-"+remoteId;audio.autoplay=true;audio.playsInline=true;document.body.appendChild(audio)}audio.srcObject=s;audio.play().catch(()=>status("Ses için sayfaya tıklayıp oynatmayı etkinleştir."))});call.on("close",()=>{calls.delete(remoteId);const a=document.getElementById("audio-"+remoteId);if(a)a.remove()});call.on("error",()=>{calls.delete(remoteId)})}
+$("host").onclick=()=>start(true);$("join").onclick=()=>start(false);
+$("mute").onclick=()=>{if(!stream)return;muted=!muted;stream.getAudioTracks().forEach(t=>t.enabled=!muted||ptt);$("mute").textContent=muted?"Mikrofon kapalı":"Mikrofonu kapat"};
+$("ptt").onclick=()=>{ptt=!ptt;if(stream)stream.getAudioTracks().forEach(t=>t.enabled=ptt?false:!muted);$("ptt").textContent="Bas-konuş: "+(ptt?"açık":"kapalı");if(ptt){$("ptt").textContent="Bas-konuş: açık (V tuşunu basılı tut)"}};
+document.addEventListener("keydown",e=>{if(e.code==="KeyV"&&!e.repeat&&ptt&&stream){stream.getAudioTracks().forEach(t=>t.enabled=true)}});document.addEventListener("keyup",e=>{if(e.code==="KeyV"&&ptt&&stream){stream.getAudioTracks().forEach(t=>t.enabled=false)}});
+function cleanup(send=true){if(send&&hostConn&&hostConn.open)hostConn.send({type:"leave",id:peer?.id});calls.forEach(c=>{try{c.close()}catch{}});calls.clear();connections.forEach(x=>{try{x.conn?.close()}catch{}});connections.clear();if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;if(peer){try{peer.destroy()}catch{}}peer=null;hostConn=null;known.clear();document.querySelectorAll("audio[id^='audio-']").forEach(a=>a.remove());ui(false);render();status("Bağlantı kesildi.")}
+$("leave").onclick=()=>cleanup(true);
+window.addEventListener("beforeunload",()=>cleanup(true));
+</script></body></html>

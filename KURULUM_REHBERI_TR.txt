@@ -1,0 +1,37 @@
+OYUNSESİ — ÜCRETSİZ WINDOWS .EXE OLUŞTURMA REHBERİ
+=====================================================
+
+Bu paket Windows kurulum dosyasını GitHub'ın ücretsiz Actions hizmetinde oluşturacak şekilde hazırlandı.
+Bu ZIP'in içinde henüz hazır .exe yoktur; .exe GitHub'da derleme tamamlanınca indirilecektir.
+
+1) GitHub hesabı oluştur / giriş yap:
+   https://github.com/
+
+2) Yeni depo (repository) oluştur:
+   - https://github.com/new adresini aç.
+   - Repository name: OyunSesi
+   - Public seç (GitHub Actions'ın ücretsiz kullanımını kolaylaştırır).
+   - Add a README seçeneğini işaretleme.
+   - Create repository düğmesine bas.
+
+3) Bu ZIP'i bilgisayarında çıkar.
+   İçindeki OyunSesi klasörünün dosyalarını depoya yükle.
+   ÖNEMLİ: .github adlı gizli klasör de yüklenmeli. Windows Dosya Gezgini > Görünüm > Göster > Gizli öğeler seçeneğini aç.
+   En kolay yöntem GitHub Desktop kullanmaktır:
+   https://desktop.github.com/
+   GitHub Desktop ile yeni depoyu bilgisayarına klonla, bu klasördeki tüm dosyaları ( .github klasörü dahil) klon klasörüne kopyala, Commit to main ve Push origin yap.
+
+4) GitHub depo sayfanda Actions sekmesine gir.
+   "OyunSesi Windows Kurulum Dosyası" iş akışı başlayacaktır. Başlamazsa iş akışını seçip Run workflow düğmesine bas.
+
+5) Yeşil tik görünmesini bekle. İş akışına tıkla. Sayfanın altındaki Artifacts bölümünden
+   OyunSesi-Windows-Setup dosyasını indir ve ZIP'ten çıkar. İçinde OyunSesi kurulum .exe dosyası bulunur.
+
+6) .exe dosyasını kendi bilgisayarında test et. Sonra arkadaşlarına gönder.
+
+ÜCRETSİZLİK VE SINIRLAR
+- GitHub Actions herkese açık depolarda ücretsiz kullanım sunar; limitler zamanla değişebilir.
+- Bu, uygulamayı derler; sürekli çalışan ses sunucusu kurmaz.
+- Prototip PeerJS'in herkese açık sinyal sunucusunu kullanır. Bazı internet ağlarında ses için TURN sunucusu gerekebilir.
+- Oda kodu gizlilik veya güvenlik doğrulaması değildir. İlk prototipi özel/hassas konuşmalar için kullanmayın.
+- 5–10 kişiyle gerçek ağlarda test edilmeden kararlı grup görüşmesi garantisi verilemez.

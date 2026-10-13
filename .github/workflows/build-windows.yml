@@ -1,0 +1,29 @@
+name: OyunSesi Windows Kurulum Dosyası
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Kaynak kodunu al
+        uses: actions/checkout@v4
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Bağımlılıkları yükle
+        run: npm install
+      - name: Windows kurulum dosyasını oluştur
+        run: npm run dist
+      - name: Kurulum dosyasını paketle
+        uses: actions/upload-artifact@v4
+        with:
+          name: OyunSesi-Windows-Setup
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 14
