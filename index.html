@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OyunSesi — Sesli Oda</title>
+<title>Volwain — Sesli Oda</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 :root{color-scheme:dark;--blue:#2a96e8;--bg:#0b1018;--panel:#121c29;--text:#eaf3ff;--muted:#91a4bb}
@@ -14,7 +14,7 @@ label{display:block;color:#c4d5e8;font-size:13px;margin:15px 0 7px}input{width:1
 .status{margin-top:18px;padding:12px;border-radius:10px;background:#0a121c;color:#b9cbe0;font-size:14px;white-space:pre-wrap}.people{margin-top:16px;border-top:1px solid #26384c;padding-top:12px}.person{padding:9px 11px;background:#172536;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:18px}.pill{color:#9fe4bd}
 </style></head>
 <body><main>
-<div class="logo">VOICE • PARTY • GAME</div><h1 class="title">OyunSesi</h1><p class="sub">Arkadaşlarınla aynı odada konuş.</p>
+<div class="logo">VOICE • PARTY • GAME</div><h1 class="title">Volwain</h1><p class="sub">Arkadaşlarınla aynı odada konuş.</p>
 <label for="room">Oda kodu (tüm arkadaşlarda aynı olmalı)</label><input id="room" value="volwain-1" maxlength="32" placeholder="ör. volwain-1">
 <label for="name">Oyuncu adın</label><input id="name" maxlength="24" placeholder="ör. Volwain">
 <label for="mic">Mikrofon seç</label>
@@ -24,11 +24,33 @@ label{display:block;color:#c4d5e8;font-size:13px;margin:15px 0 7px}input{width:1
 <div class="row"><button id="mute" class="secondary" disabled>Mikrofonu kapat</button><button id="ptt" class="secondary" disabled>Bas-konuş: kapalı</button><button id="leave" class="danger" disabled>Bağlantıyı kes</button></div>
 <div id="status" class="status">Hazır. İlk olarak “Odayı oluştur” veya “Odaya katıl” düğmesine bas.</div>
 <div class="people"><strong>Bağlantılar</strong><div id="people"><div class="person">Henüz kimse bağlanmadı</div></div></div>
+<div class="people" id="chatSection"><strong>Oda sohbeti</strong>
+<div id="chatMessages" style="height:180px;overflow:auto;background:#0a121c;border:1px solid #26384c;border-radius:10px;padding:10px;margin-top:10px"><div class="hint">Odaya bağlanınca mesajlaşabilirsin.</div></div>
+<div class="row" style="margin-top:10px"><input id="chatInput" maxlength="400" placeholder="Mesajını yaz..." style="flex:1;min-width:180px"><button id="sendChat" type="button">Gönder</button></div>
+<div class="hint">Sohbet mesajları aynı odadaki bağlı kullanıcılara iletilir. Kalıcı mesaj geçmişi yoktur.</div></div>
 <p class="hint">Deneme sürümüdür. Mikrofon için izin gerekir. Farklı evlerden kullanımda bağlantı ağına göre çalışmayabilir; güvenilir kullanım için TURN destekli bir sunucu gerekebilir. Oda kodunu herkese açık paylaşma. Ses aktarımı için PeerJS'in herkese açık sinyal sunucusuna ve WebRTC altyapısına bağımlıdır. Masaüstü paketinde de internet bağlantısı gerekir.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 let peer=null,stream=null,roomId="",myName="",isHost=false,muted=false,ptt=false,connections=new Map(),calls=new Map(),known=new Set(),hostConn=null;
+function addChatMessage(sender,message,own=false){
+ const box=$("chatMessages"); if(box.querySelector(".hint"))box.innerHTML="";
+ const row=document.createElement("div");row.style.margin="6px 0";row.style.overflowWrap="anywhere";
+ const who=document.createElement("strong");who.textContent=sender+": ";who.style.color=own?"#65b9ff":"#c4d5e8";
+ const msg=document.createElement("span");msg.textContent=message;row.append(who,msg);box.appendChild(row);box.scrollTop=box.scrollHeight;
+}
+function sendChat(){
+ const input=$("chatInput"),message=input.value.trim();if(!message)return;
+ if(!peer){addChatMessage("Sistem","Mesaj göndermek için önce odaya bağlan.");return}
+ addChatMessage(myName||"Sen",message,true);
+ const payload={type:"chat",name:myName||"Oyuncu",message:message.slice(0,400)};
+ if(isHost){connections.forEach(x=>{if(x.conn&&x.conn.open)x.conn.send(payload)});}
+ else if(hostConn&&hostConn.open){hostConn.send(payload);}
+ else{addChatMessage("Sistem","Oda bağlantısı yok; mesaj gönderilemedi.");}
+ input.value="";
+}
+$("sendChat").onclick=sendChat;$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
+
 async function refreshMics(){
  const sel=$("mic"), previous=sel.value;
  try{
@@ -74,9 +96,11 @@ function wireData(conn,toHost){
   if(!msg||!msg.type)return;
   if(isHost){
    if(msg.type==="join"){connections.set(msg.id,{name:msg.name,conn});known.add(msg.id);render();broadcastPeers();callPeer(msg.id);status("Oda açık. Arkadaşların oda koduyla katılabilir.");}
+   if(msg.type==="chat"){connections.forEach((x,id)=>{if(id!==msg.id&&x.conn&&x.conn.open)x.conn.send(msg)});}
    if(msg.type==="leave"){connections.delete(msg.id);known.delete(msg.id);render();broadcastPeers();}
   }else{
    if(msg.type==="peers"){msg.peers.forEach(p=>{if(p.id!==peer.id&&!known.has(p.id)){known.add(p.id);if(p.id!== "oyunsesi-"+roomId)callPeer(p.id)}});}
+   if(msg.type==="chat"){addChatMessage(msg.name||"Oyuncu",msg.message||"");}
    if(msg.type==="welcome"){connections.set(msg.id,{name:msg.name});render();}
   }
  });
